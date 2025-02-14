@@ -1,0 +1,125 @@
+{
+  system ? builtins.currentSystem,
+  lock ? builtins.fromJSON (builtins.readFile ./flake.lock),
+  pkgs ? let
+    nixpkgs = fetchTarball {
+      url = "https://github.com/NixOS/nixpkgs/archive/${lock.nodes.nixpkgs.locked.rev}.tar.gz";
+      sha256 = lock.nodes.nixpkgs.locked.narHash;
+    };
+  in
+    import nixpkgs {
+      overlays = [];
+      config = {};
+      inherit system;
+    },
+  miniCompileCommands ?
+    fetchTarball {
+      url = "https://github.com/danielbarter/mini_compile_commands/archive/${lock.nodes.miniCompileCommands.locked.rev}.tar.gz";
+      sha256 = lock.nodes.miniCompileCommands.locked.narHash;
+    },
+  kotur-nixpkgs ? let
+    koturPkgs = fetchTarball {
+      url = "https://github.com/nkoturovic/kotur-nixpkgs/archive/${lock.nodes.koturNixPkgs.locked.rev}.tar.gz";
+      sha256 = lock.nodes.koturNixPkgs.locked.narHash;
+    };
+  in
+    import koturPkgs {
+      inherit system;
+    },
+}: let
+  mcc-env = (pkgs.callPackage miniCompileCommands {}).wrap pkgs.stdenv;
+  mcc-hook = (pkgs.callPackage miniCompileCommands {}).hook;
+  package = mcc-env.mkDerivation (self: {
+    name = "hypr-monitor";
+    version = "0.0.1";
+
+    nativeBuildInputs = with pkgs; [
+      mcc-hook # hook for generating compile commands when building the package
+
+      ncurses
+      cmake
+      gnumake
+      clang
+      vscode-extensions.vadimcn.vscode-lldb
+      lldb_14
+    ];
+
+    # Programs and libraries used by the new derivation at run-time
+    buildInputs = with pkgs; [
+      fmt
+    ];
+
+    # builtins.path is used since source of our package is the current directory: ./
+    # Alternatively, you can use: fetchFromGitHub, fetchTarball or similar
+    src = builtins.path {
+      path = ./.;
+
+      # Filter all files that begin with '.', for example '.git', that way
+      # .git directory will not become part of the source of our package
+      filter = path: type:
+        !(pkgs.lib.hasPrefix "." (baseNameOf path));
+    };
+
+    # Specify cmake flags
+    cmakeFlags = [
+      "--no-warn-unused-cli" # Supresses unused varibles warning
+      "-DCMAKE_BUILD_TYPE=Debug"  # Force debug mode
+    ];
+
+    dontStrip = true;
+
+    # Nix is smart enough to detect we're using cmake to build our project
+    # It will read our CMakeLists.txt file and create needed definitions
+    # Alternatively, we could have been pre-defining the default phases that nix does
+    # for a CMake based projects (see definitions bellow that are commented-out ###)
+
+    ### buildDir = "build-nix-${self.name}-${self.version}";
+
+    ### configurePhase = ''
+    ###   mkdir ./${self.buildDir} && cd ./${self.buildDir}
+    ###   cmake .. -DCMAKE_BUILD_TYPE=Release
+    ### '';
+
+    ### buildPhase = ''
+    ###   make -j$(nproc)
+    ### '';
+
+    ### installPhase = ''
+    ###   mkdir -p $out/bin
+    ###   cp src/${self.name} $out/bin/
+    ### '';
+
+    # passthru - it is meant for values that would be useful outside of the derivation
+    # in other parts of a Nix expression (e.g. in other derivations)
+    passthru = {
+      # inherit has nothing to do with OOP, it's a nix-specific syntax for
+      # inheriting (copying) variables from the surrounding lexical scope
+      inherit pkgs shell;
+      # equivalent to:
+      # pkgs = pkgs
+      # shell = shell
+    };
+  });
+
+  # Development shell
+  shell = (pkgs.mkShell.override {stdenv = mcc-env;}) {
+    # Copy build inputs (dependencies) from the derivation the nix-shell environment
+    # That way, there is no need for speciying dependenvies separately for derivation and shell
+    inputsFrom = [
+      package
+    ];
+
+    # Shell (dev environment) specific packages
+    packages = with pkgs; [
+      kotur-nixpkgs.dinosay # packet loads from the custom nixpkgs (kotur-nixpkgs)
+    ];
+    
+    shellHook = ''
+      # Set LLDB_PATH for Neovim debugging
+      export LLDB_PATH=${pkgs.lldb_14}/bin/lldb-vscode
+      echo "Using LLDB_PATH: $LLDB_PATH"
+    '';
+
+  };
+in
+  package
