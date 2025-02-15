@@ -1,0 +1,28 @@
+# CMake build files
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+
+# Nix build artifacts
+result/
+.nix-profile
+.nix-defexpr
+.nix-gcroots
+
+# Editor/IDE files
+.vscode/
+.idea/
+*.iml
+
+# macOS files
+.DS_Store
+
+# Logs and temporary files
+*.log
+*.swp
+*.swo
+
+# symlinked compile_commands.json (usually generated)
+compile_commands.json
+
