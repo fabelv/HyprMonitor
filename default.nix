@@ -1,6 +1,7 @@
 {
   system ? builtins.currentSystem,
   lock ? builtins.fromJSON (builtins.readFile ./flake.lock),
+  # The official nixpkgs input, pinned with the hash defined in the flake.lock file
   pkgs ? let
     nixpkgs = fetchTarball {
       url = "https://github.com/NixOS/nixpkgs/archive/${lock.nodes.nixpkgs.locked.rev}.tar.gz";
@@ -12,11 +13,13 @@
       config = {};
       inherit system;
     },
+  # Helper tool for generating compile-commands.json
   miniCompileCommands ?
     fetchTarball {
       url = "https://github.com/danielbarter/mini_compile_commands/archive/${lock.nodes.miniCompileCommands.locked.rev}.tar.gz";
       sha256 = lock.nodes.miniCompileCommands.locked.narHash;
     },
+  # Custom nixpkgs channel, owner's nickname is kotur, hence kotur-nixpkgs
   kotur-nixpkgs ? let
     koturPkgs = fetchTarball {
       url = "https://github.com/nkoturovic/kotur-nixpkgs/archive/${lock.nodes.koturNixPkgs.locked.rev}.tar.gz";
@@ -27,12 +30,23 @@
       inherit system;
     },
 }: let
+  # Using mini_compile_commands to export compile_commands.json
   mcc-env = (pkgs.callPackage miniCompileCommands {}).wrap pkgs.stdenv;
   mcc-hook = (pkgs.callPackage miniCompileCommands {}).hook;
+
+  # Stdenv is base for packaging software in Nix It is used to pull in dependencies such as the GCC toolchain,
+  # GNU make, core utilities, patch and diff utilities, and so on. Basic tools needed to compile a huge pile
+  # of software currently present in nixpkgs.
+  #
+  # Some platforms have different toolchains in their StdEnv definition by default
+  # To ensure gcc being default, we use gccStdenv as a base instead of just stdenv
+  # mkDerivation is the main function used to build packages with the Stdenv
   package = mcc-env.mkDerivation (self: {
+    # TODO: set project name
     name = "hypr-monitor";
     version = "0.0.1";
 
+    # Programs and libraries used/available at build-time
     nativeBuildInputs = with pkgs; [
       mcc-hook # hook for generating compile commands when building the package
 
@@ -47,6 +61,7 @@
     # Programs and libraries used by the new derivation at run-time
     buildInputs = with pkgs; [
       fmt
+      wlroots
     ];
 
     # builtins.path is used since source of our package is the current directory: ./
@@ -115,6 +130,12 @@
     ];
     
     shellHook = ''
+      # Set WLR_ROOT for wlroots headers & libraries
+      export WLR_ROOT=${pkgs.wlroots}
+      export C_INCLUDE_PATH=$WLR_ROOT/include:$C_INCLUDE_PATH
+      export LIBRARY_PATH=$WLR_ROOT/lib:$LIBRARY_PATH
+      echo "Using WLR_ROOT: $WLR_ROOT"
+
       # Set LLDB_PATH for Neovim debugging
       export LLDB_PATH=${pkgs.lldb_14}/bin/lldb-vscode
       echo "Using LLDB_PATH: $LLDB_PATH"
