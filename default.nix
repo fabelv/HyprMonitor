@@ -45,5 +45,7 @@ let
     '';
   };
 in
-  package
-
+{
+  package = package;
+  shell = shell;
+}
