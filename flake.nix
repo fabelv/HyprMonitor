@@ -28,8 +28,11 @@
 
       hyprlandPkg = hyprland.packages.${system}.hyprland;
 
+      # Force GCC 13.3.0 instead of GCC 14
+      gccVersion = pkgs.gcc13;
+
       pkgsOut = import ./default.nix {
-        inherit system pkgs miniCompileCommands hyprlandPkg;
+        inherit system pkgs miniCompileCommands hyprlandPkg gccVersion;
       };
     in {
       packages.default = pkgsOut.package;

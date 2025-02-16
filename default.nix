@@ -1,7 +1,7 @@
 
-{ system, pkgs, miniCompileCommands, hyprlandPkg }:  
+{ system, pkgs, miniCompileCommands, hyprlandPkg, gccVersion }:  
 let
-  mcc-env = (pkgs.callPackage miniCompileCommands {}).wrap pkgs.stdenv;
+  mcc-env = (pkgs.callPackage miniCompileCommands {}).wrap gccVersion.stdenv; 
   mcc-hook = (pkgs.callPackage miniCompileCommands {}).hook;
 
   package = mcc-env.mkDerivation (self: {
@@ -14,6 +14,7 @@ let
       cmake
       gnumake
       clang
+      gccVersion
       vscode-extensions.vadimcn.vscode-lldb
       lldb_14
       hyprlandPkg
@@ -21,8 +22,6 @@ let
 
     buildInputs = with pkgs; [
       fmt
-      #libGLU
-      #aquamarine
       hyprlandPkg
     ];
 
@@ -41,10 +40,7 @@ let
 
   shell = pkgs.mkShell {
     inputsFrom = [ package ];
-    packages = with pkgs; [ 
-      #aquamarine 
-      hyprlandPkg 
-    ];
+    packages = with pkgs; [ hyprlandPkg ];
     shellHook = ''
       export LLDB_PATH=${pkgs.lldb_14}/bin/lldb-vscode
     '';
