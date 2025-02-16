@@ -1,4 +1,5 @@
-{ system, pkgs, miniCompileCommands }:  
+
+{ system, pkgs, miniCompileCommands, hyprlandPkg }:  
 let
   mcc-env = (pkgs.callPackage miniCompileCommands {}).wrap pkgs.stdenv;
   mcc-hook = (pkgs.callPackage miniCompileCommands {}).hook;
@@ -15,12 +16,14 @@ let
       clang
       vscode-extensions.vadimcn.vscode-lldb
       lldb_14
+      hyprlandPkg
     ];
 
     buildInputs = with pkgs; [
       fmt
-      libGLU
-      aquamarine
+      #libGLU
+      #aquamarine
+      hyprlandPkg
     ];
 
     src = builtins.path {
@@ -38,10 +41,12 @@ let
 
   shell = pkgs.mkShell {
     inputsFrom = [ package ];
-    packages = with pkgs; [ aquamarine ];
+    packages = with pkgs; [ 
+      #aquamarine 
+      hyprlandPkg 
+    ];
     shellHook = ''
       export LLDB_PATH=${pkgs.lldb_14}/bin/lldb-vscode
-      echo "Using LLDB_PATH: $LLDB_PATH"
     '';
   };
 in
@@ -49,3 +54,4 @@ in
   package = package;
   shell = shell;
 }
+
