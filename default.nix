@@ -7,20 +7,17 @@ pkgs.stdenv.mkDerivation rec {
 
   src = ./.;
 
-  # ✅ Include Hyprland in Native Build Inputs
   nativeBuildInputs = with pkgs; [
     cmake
     ninja
     pkg-config
   ] ++ hyprlandPkg.nativeBuildInputs;
 
-  # ✅ Ensure Hyprland is in Build Inputs
   buildInputs = with pkgs; [
     fmt
     hyprlandPkg
   ] ++ hyprlandPkg.buildInputs;
 
-  # ✅ Set Environment Variables for CMake and pkg-config
   preConfigure = ''
     export HYPRLAND_DIR="${hyprlandPkg}"
     export PKG_CONFIG_PATH="${hyprlandPkg}/lib/pkgconfig:$PKG_CONFIG_PATH"

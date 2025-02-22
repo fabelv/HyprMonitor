@@ -9,7 +9,7 @@
       pkgs = import nixpkgs { inherit system; };
       hyprlandPkg = hyprland.packages.${system}.hyprland;
     in {
-      packages.default = pkgs.callPackage ./default.nix { inherit pkgs hyprlandPkg; };
+      packages.hypr-monitor = pkgs.callPackage ./default.nix { inherit pkgs hyprlandPkg; };
 
       devShells.default = pkgs.mkShell {
         inputsFrom = [ hyprlandPkg ];
