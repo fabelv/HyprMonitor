@@ -33,7 +33,7 @@ pkgs.stdenv.mkDerivation rec {
 
   installPhase = ''
     mkdir -p $out/lib/hyprland/plugins
-    cp build/libhypr-monitor-plugin.so $out/lib/hyprland/plugins/
+    cp build/libhypr-monitor-plugin.so $out/lib//
   '';
 }
 
