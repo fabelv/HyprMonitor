@@ -18,26 +18,26 @@
     flake = false;
   };
 
-  outputs = { self, nixpkgs, flake-utils, systems, hyprland, miniCompileCommands, ... }:
-    flake-utils.lib.eachDefaultSystem (system:
-    let
-      pkgs = import nixpkgs {
-        inherit system;
-        overlays = builtins.attrValues hyprland.overlays;
-      };
 
-      hyprlandPkg = hyprland.packages.${system}.hyprland;
+outputs = { self, nixpkgs, flake-utils, systems, hyprland, miniCompileCommands, ... }:
+  flake-utils.lib.eachDefaultSystem (system:
+  let
+    pkgs = import nixpkgs {
+      inherit system;
+      overlays = builtins.attrValues hyprland.overlays;
+    };
 
-      # Force GCC 13.3.0 instead of GCC 14
-      gccVersion = pkgs.gcc13;
+    hyprlandPkg = hyprland.packages.${system}.hyprland;
+    gccVersion = pkgs.gcc14;
 
-      pkgsOut = import ./default.nix {
-        inherit system pkgs miniCompileCommands hyprlandPkg gccVersion;
-      };
-    in {
-      packages.default = pkgsOut.package;
-      devShells.default = pkgsOut.shell;
-      formatter = pkgs.alejandra;
-    });
+    pkgsOut = import ./default.nix {
+      inherit system pkgs miniCompileCommands hyprlandPkg hyprland gccVersion;
+    };
+  in {
+    packages.default = pkgsOut.package;
+    devShells.default = pkgsOut.shell;
+    formatter = pkgs.alejandra;
+  });
+
 }
 
