@@ -42,12 +42,6 @@ let
     ];
 
     dontStrip = true;
-
-    shellHook = ''
-      export CXXFLAGS="-std=c++23"
-      export LDFLAGS="-L${hyprlandPkg.libHyprland}/lib -lhyprland" # ✅ Ensure Hyprland is linked
-      export LLDB_PATH=${pkgs.lldb_14}/bin/lldb-vscode
-    '';
   });
 
   shell = pkgs.mkShell {
