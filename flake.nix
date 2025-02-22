@@ -1,4 +1,3 @@
-
 {
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
@@ -13,31 +12,17 @@
     inputs.systems.follows = "systems";
   };
 
-  inputs.miniCompileCommands = {
-    url = "github:danielbarter/mini_compile_commands/v0.6";
-    flake = false;
-  };
-
-
-outputs = { self, nixpkgs, flake-utils, systems, hyprland, miniCompileCommands, ... }:
-  flake-utils.lib.eachDefaultSystem (system:
-  let
-    pkgs = import nixpkgs {
-      inherit system;
-      overlays = builtins.attrValues hyprland.overlays;
-    };
-
-    hyprlandPkg = hyprland.packages.${system}.hyprland;
-    gccVersion = pkgs.gcc14;
-
-    pkgsOut = import ./default.nix {
-      inherit system pkgs miniCompileCommands hyprlandPkg hyprland gccVersion;
-    };
-  in {
-    packages.default = pkgsOut.package;
-    devShells.default = pkgsOut.shell;
-    formatter = pkgs.alejandra;
-  });
-
+  outputs = { self, nixpkgs, flake-utils, systems, hyprland, ... }:
+    flake-utils.lib.eachDefaultSystem (system:
+    let
+      pkgs = import nixpkgs { inherit system; };
+      hyprlandPkg = hyprland.packages.${system}.hyprland;
+    in {
+      packages.default = import ./default.nix { inherit pkgs hyprlandPkg; };
+      devShells.default = pkgs.mkShell {
+        buildInputs = [ hyprlandPkg ];
+      };
+      formatter = pkgs.alejandra;
+    });
 }
 

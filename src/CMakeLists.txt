@@ -1,2 +1,3 @@
-add_executable(hypr-monitor main.cpp)
-target_link_libraries(hypr-monitor fmt::fmt)
+add_library(hypr-monitor-plugin SHARED main.cpp)
+target_link_libraries(hypr-monitor-plugin PRIVATE fmt::fmt)
+
