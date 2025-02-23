@@ -2,6 +2,7 @@
 #include <hyprland/src/config/ConfigDataValues.hpp>
 #include <stdexcept>
 #include <string>
+#include <any>  // Required for std::any_cast
 
 inline HANDLE PHANDLE = nullptr;
 
@@ -53,6 +54,30 @@ APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
 
     #undef CONF
 
+    // Read the test config value from Hyprland's config
+    auto testValue = HyprlandAPI::getConfigValue(PHANDLE, "plugin:HyprMonitor:test");
+
+    // Ensure testValue is valid and cast to int
+    int testInt = -1; // Default value
+    if (testValue && testValue->getValue().has_value()) {
+        try {
+            testInt = std::any_cast<int>(testValue->getValue());
+        } catch (const std::bad_any_cast& e) {
+            HyprlandAPI::addNotification(PHANDLE,
+                "[HyprMonitor] Failed to cast 'test' config value to int!",
+                CHyprColor{1.0f, 0.2f, 0.2f, 1.0f},
+                10000
+            );
+        }
+    }
+
+    // Display the test config value in a notification
+    HyprlandAPI::addNotification(PHANDLE,
+        "[HyprMonitor] Config value: test = " + std::to_string(testInt),
+        CHyprColor{0.5f, 1.0f, 0.5f, 1.0f},
+        10000
+    );
+
     return {"HyprMonitor", "A simple test plugin to verify the dev setup.", "Fabio Elvedi", "1.0"};
 }
 
@@ -63,6 +88,4 @@ APICALL EXPORT void PLUGIN_EXIT() {
         3000
     );
 }
-
-
 
