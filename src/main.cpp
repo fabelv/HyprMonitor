@@ -1,11 +1,11 @@
-
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <stdexcept>
 #include <string>
+#include <vector>
+#include <iostream>
 
-// Global plugin handle.
+// Global plugin handle
 inline HANDLE PHANDLE = nullptr;
-
 // Mandatory function: returns the API version.
 // Do not modify this function.
 APICALL EXPORT std::string PLUGIN_API_VERSION() {
