@@ -1,41 +1,52 @@
+{
+  hyprland,
 
-{ pkgs, hyprlandPkg }:
+  lib,
+  nix-gitignore,
+  keepDebugInfo,
+  stdenv ? (keepDebugInfo hyprland.stdenv),
 
-pkgs.stdenv.mkDerivation rec {
+  cmake,
+  ninja,
+  pkg-config,
+  pango,
+  cairo,
+
+  debug ? false,
+  hlversion ? "git",
+  versionCheck ? true,
+}: hyprland.stdenv.mkDerivation {
   pname = "hypr-monitor";
-  version = "0.1";
+  version = "hl${hlversion}${lib.optionalString debug "-debug"}";
+  src = nix-gitignore.gitignoreSource [] ./.;
 
-  src = ./.;
-
-  nativeBuildInputs = with pkgs; [
+  nativeBuildInputs = [
     cmake
     ninja
     pkg-config
-  ] ++ hyprlandPkg.nativeBuildInputs;
+  ];
 
-  buildInputs = with pkgs; [
-    fmt
-    hyprlandPkg
-  ] ++ hyprlandPkg.buildInputs;
+  buildInputs = [
+    hyprland.dev
+    pango
+    cairo
+  ] ++ hyprland.buildInputs;
 
-  preConfigure = ''
-    export HYPRLAND_DIR="${hyprlandPkg}"
-    export PKG_CONFIG_PATH="${hyprlandPkg}/lib/pkgconfig:$PKG_CONFIG_PATH"
-  '';
+  cmakeFlags = lib.optional (!versionCheck) "-DHYPRMONITOR_NO_VERSION_CHECK=ON";
 
-  configurePhase = ''
-    cmake -B build -DCMAKE_BUILD_TYPE=Debug
-  '';
+  cmakeBuildType = if debug
+                   then "Debug"
+                   else "RelWithDebInfo";
 
-  buildPhase = ''
-    cmake --build build
-  '';
+  buildPhase = "ninjaBuildPhase";
+  enableParallelBuilding = true;
+  dontStrip = true;
 
-
-  installPhase = ''
-    mkdir -p $out/lib/hyprland/plugins
-    cp build/libhypr-monitor-plugin.so $out/lib/hyprland/plugins/
-  '';
-
+  meta = with lib; {
+    homepage = "https://github.com/fabelv/HyprMonitor";
+    description = "Hyprland plugin for monitor management";
+    license = licenses.gpl3;
+    platforms = platforms.linux;
+  };
 }
 

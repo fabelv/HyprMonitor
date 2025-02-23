@@ -1,28 +1,40 @@
 {
   inputs = {
-    flake-utils.url = "github:numtide/flake-utils";
-    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    hyprland.url = "github:hyprwm/Hyprland";
+    hyprland.url = "github:hyprwm/Hyprland?rev=ff9e059de6dd30c813270ff5a74053339cc94765";
   };
 
-  outputs = { self, nixpkgs, flake-utils, hyprland, ... }:
-    flake-utils.lib.eachDefaultSystem (system: 
-    let
-      pkgs = import nixpkgs { inherit system; };
-      hyprlandPkg = hyprland.packages.${system}.hyprland;
-    in {
-      packages.hypr-monitor = pkgs.callPackage ./default.nix { inherit pkgs hyprlandPkg; };
+  outputs = { self, hyprland, ... }: let
+    inherit (hyprland.inputs) nixpkgs;
 
-      devShells.default = pkgs.mkShell {
-        inputsFrom = [ hyprlandPkg ];
-        packages = with pkgs; [
-          cmake
-          ninja
-          clang
-          pkg-config
-          hyprlandPkg
-        ];
+    hyprlandSystems = fn: nixpkgs.lib.genAttrs
+      (builtins.attrNames hyprland.packages)
+      (system: fn system nixpkgs.legacyPackages.${system});
+
+    hyprlandVersion = nixpkgs.lib.removeSuffix "\n" (builtins.readFile "${hyprland}/VERSION");
+  in {
+    packages = hyprlandSystems (system: pkgs: rec {
+      hypr-monitor = pkgs.callPackage ./default.nix {
+        hyprland = hyprland.packages.${system}.hyprland;
+        hlversion = hyprlandVersion;
+      };
+      default = hypr-monitor;
+    });
+
+    devShells = hyprlandSystems (system: pkgs: {
+      default = import ./shell.nix {
+        inherit pkgs;
+        hlversion = hyprlandVersion;
+        hyprland = hyprland.packages.${system}.hyprland-debug;
+      };
+
+      impure = import ./shell.nix {
+        pkgs = import <nixpkgs> {};
+        hlversion = hyprlandVersion;
+        hyprland = (pkgs.appendOverlays [ hyprland.overlays.hyprland-packages ]).hyprland-debug.overrideAttrs {
+          dontStrip = true;
+        };
       };
     });
+  };
 }
 
