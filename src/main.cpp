@@ -1,8 +1,6 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <stdexcept>
 #include <string>
-#include <vector>
-#include <iostream>
 
 // Global plugin handle
 inline HANDLE PHANDLE = nullptr;
@@ -57,4 +55,3 @@ APICALL EXPORT void PLUGIN_EXIT() {
         3000
     );
 }
-

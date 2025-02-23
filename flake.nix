@@ -1,7 +1,7 @@
 {
   inputs.flake-utils.url = "github:numtide/flake-utils";
   inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.hyprland.url = "github:hyprwm/Hyprland/410da2e46fc44d93196cd902a070391a416cff01";
+  inputs.hyprland.url = "github:hyprwm/Hyprland";
 
   outputs = { self, nixpkgs, flake-utils, hyprland, ... }:
     flake-utils.lib.eachDefaultSystem (system: 
