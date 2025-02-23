@@ -1,7 +1,9 @@
 {
-  inputs.flake-utils.url = "github:numtide/flake-utils";
-  inputs.nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-  inputs.hyprland.url = "github:hyprwm/Hyprland";
+  inputs = {
+    flake-utils.url = "github:numtide/flake-utils";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    hyprland.url = "github:hyprwm/Hyprland";
+  };
 
   outputs = { self, nixpkgs, flake-utils, hyprland, ... }:
     flake-utils.lib.eachDefaultSystem (system: 
@@ -16,6 +18,7 @@
         packages = with pkgs; [
           cmake
           ninja
+          clang
           pkg-config
           hyprlandPkg
         ];
