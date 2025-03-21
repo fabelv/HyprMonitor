@@ -1,17 +1,15 @@
 {
   hyprland,
-
   lib,
   nix-gitignore,
   keepDebugInfo,
   stdenv ? (keepDebugInfo hyprland.stdenv),
-
   cmake,
   ninja,
   pkg-config,
   pango,
   cairo,
-
+  nlohmann_json,
   debug ? false,
   hlversion ? "git",
   versionCheck ? true,
@@ -30,6 +28,7 @@
     hyprland.dev
     pango
     cairo
+    nlohmann_json
   ] ++ hyprland.buildInputs;
 
   cmakeFlags = lib.optional (!versionCheck) "-DHYPRMONITOR_NO_VERSION_CHECK=ON";

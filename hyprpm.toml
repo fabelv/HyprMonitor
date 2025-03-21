@@ -3,7 +3,7 @@ name = "hypr-monitor"
 authors = ["Fabio Elvedi"]
 
 [hypr-monitor]
-description = "Monitor management plugin for Hyprland"
+description = "A monitor management plugin for Hyprland"
 authors = ["Fabio Elvedi"]
 output = "build/libhypr-monitor.so"
 build = [

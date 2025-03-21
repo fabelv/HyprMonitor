@@ -1,6 +1,7 @@
 #include <hyprland/src/plugins/PluginAPI.hpp>
 #include <hyprland/src/config/ConfigDataValues.hpp>
-#include <stdexcept>
+#include <hyprland/src/version.h>
+#include <hyprlang.hpp>
 #include <string>
 
 inline HANDLE PHANDLE = nullptr;
@@ -12,66 +13,47 @@ APICALL EXPORT std::string PLUGIN_API_VERSION() {
 APICALL EXPORT PLUGIN_DESCRIPTION_INFO PLUGIN_INIT(HANDLE handle) {
     PHANDLE = handle;
 
-    // Retrieve and verify runtime hash
+#ifndef HYPRMONITOR_NO_VERSION_CHECK
     const std::string runtimeHash = __hyprland_api_get_hash();
     const std::string compileHash = GIT_COMMIT_HASH;
 
-    HyprlandAPI::addNotification(PHANDLE,
-        "[HyprMonitor] PLUGIN_INIT executed!\n"
-        "Compile hash: " + compileHash + "\n"
-        "Runtime hash: " + runtimeHash,
-        CHyprColor{0.0f, 1.0f, 1.0f, 1.0f},
-        5000
-    );
-
     if (runtimeHash != compileHash) {
         HyprlandAPI::addNotification(PHANDLE,
-            "[HyprMonitor] Mismatched headers! Can't proceed.\n"
-            "Compile hash: " + compileHash + "\n"
-            "Runtime hash: " + runtimeHash,
-            CHyprColor{1.0f, 0.2f, 0.2f, 1.0f},
-            5000
-        );
-        throw std::runtime_error("[HyprMonitor] Version mismatch\n"
-                                 "Compile hash: " + compileHash + "\n"
-                                 "Runtime hash: " + runtimeHash);
+            "[HyprMonitor] Plugin version mismatch", {1.0, 0.2, 0.2, 1.0}, 10000);
+        throw std::runtime_error("Plugin version mismatch");
+    }
+#endif
+
+    // Register the config field like hy3
+    #define CONF(NAME, TYPE, VALUE) \
+        HyprlandAPI::addConfigValue(PHANDLE, "plugin:HyprMonitor:" NAME, Hyprlang::CConfigValue((TYPE) VALUE))
+
+    using Hyprlang::STRING;
+    CONF("config", STRING, "");
+    #undef CONF
+
+    // Read the registered value using the raw pointer
+    const auto val = HyprlandAPI::getConfigValue(PHANDLE, "plugin:HyprMonitor:config");
+    if (val && val->getDataStaticPtr()) {
+        const char* configStr = *(const char**) val->getDataStaticPtr();
+        HyprlandAPI::addNotification(PHANDLE,
+            "[HyprMonitor] Config: " + std::string(configStr),
+            {0.2, 1.0, 0.2, 1.0}, 10000);
+    } else {
+        HyprlandAPI::addNotification(PHANDLE,
+            "[HyprMonitor] Config not found or empty",
+            {1.0, 0.5, 0.0, 1.0}, 10000);
     }
 
-    // Define a test config variable
-    HyprlandAPI::addConfigValue(PHANDLE, "plugin:HyprMonitor:test", Hyprlang::CConfigValue((Hyprlang::INT) 0));
-
-    // Retrieve the config value
-    auto testValue = HyprlandAPI::getConfigValue(PHANDLE, "plugin:HyprMonitor:test");
-
-    // Parse the value safely
-    int testInt = -1; // Default fallback
-    if (testValue && testValue->getValue().has_value()) {
-        try {
-            testInt = std::any_cast<int>(testValue->getValue());
-        } catch (const std::bad_any_cast& e) {
-            HyprlandAPI::addNotification(PHANDLE,
-                "[HyprMonitor] Failed to cast 'test' config value: " + std::string(e.what()),
-                CHyprColor{1.0f, 0.2f, 0.2f, 1.0f},
-                10000
-            );
-        }
-    }
-
-    // Display the retrieved value
-    HyprlandAPI::addNotification(PHANDLE,
-        "[HyprMonitor] Config value: test = " + std::to_string(testInt),
-        CHyprColor{0.5f, 1.0f, 0.5f, 1.0f},
-        10000
-    );
-
-    return {"HyprMonitor", "A simple test plugin to verify the dev setup.", "Fabio Elvedi", "1.0"};
+    return {
+        "HyprMonitor",
+        "Debugging plugin config",
+        "Fabio Elvedi",
+        "0.1"
+    };
 }
 
 APICALL EXPORT void PLUGIN_EXIT() {
-    HyprlandAPI::addNotification(PHANDLE,
-        "[HyprMonitor] Plugin unloaded.",
-        CHyprColor{1.0f, 1.0f, 0.0f, 1.0f},
-        3000
-    );
+    HyprlandAPI::addNotification(PHANDLE, "[HyprMonitor] Plugin unloaded.", {1, 1, 0, 1}, 10000);
 }
 

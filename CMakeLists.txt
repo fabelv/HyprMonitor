@@ -21,6 +21,7 @@ pkg_check_modules(DEPS REQUIRED hyprland pixman-1 libdrm pango pangocairo libinp
 # Define the shared library (Add source files if needed)
 add_library(hypr-monitor SHARED
     src/main.cpp
+    src/config
 )
 
 # Allow disabling version check for easier debugging
